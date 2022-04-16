@@ -10,20 +10,13 @@ def apply(func: Callable, df: pd.DataFrame, **kwargs) -> pd.Series:
     params_allowed = set(inspect.signature(func).parameters)
     assert params_used.issubset(params_allowed)
 
-    # update parameter arguments as the actual column whenever a column name is given
-    cleaned_args = {} 
-    exclude_from_vectorization = []
-    for param, arg in kwargs.items():
-        if arg in df.columns:
-            # if an input argument matches a column name assume the value is the column in the table
-            cleaned_args[param] = df[arg]
-        else:
-            # otherwise just take the input argument at face value
-            cleaned_args[param] = arg
-            exclude_from_vectorization.append(arg)
+    # identify the parameters whose arguments are column names in the DataFrame (which are to be vectorized)
+    params_with_colname_args = [param for param, arg in kwargs.items() if arg in df.columns]
 
-    # vectorize the function and exclude the "constant" input values
-    vectorized_func = np.vectorize(func, excluded=exclude_from_vectorization)
+    # update the arguments that were column names to instead contain the columns themselves
+    function_inputs = {param: df[arg] if param in params_with_colname_args else arg for param, arg in kwargs.items()}
 
-    # run the vectorized function on the DataFrame columns provided
-    return vectorized_func(**cleaned_args)
+    # identify parameters that do not have column names as arguments (which are not to be vectorized)
+    non_colname_params = set(kwargs).difference(params_with_colname_args)
+    vectorized_func = np.vectorize(func, excluded=non_colname_params)
+    return vectorized_func(**function_inputs)
