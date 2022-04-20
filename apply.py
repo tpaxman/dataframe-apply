@@ -11,9 +11,11 @@ def apply(func: Callable, df: pd.DataFrame, **kwargs) -> pd.Series:
     """
 
     # ensure that all parameters used are actually in the function's signature 
+    func_params = inspect.signature(func).parameters
+    signature_contains_kwargs = any(x.kind == x.VAR_KEYWORD for x in func_params.values())
     params_used = set(kwargs)
-    params_allowed = set(inspect.signature(func).parameters)
-    invalid_params_used = params_used - params_allowed
+    params_allowed = set(func_params)
+    invalid_params_used = params_used - params_allowed if not signature_contains_kwargs else set()
     assert not invalid_params_used, f"invalid parameters passed to {func.__name__}: {', '.join(invalid_params_used)}"
 
     # identify the parameters whose arguments are column names in the DataFrame (which are to be vectorized)
