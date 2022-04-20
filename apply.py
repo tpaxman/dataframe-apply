@@ -3,7 +3,7 @@ import inspect
 import pandas as pd
 import numpy as np
 
-def apply(func: Callable, df: pd.DataFrame, **kwargs) -> pd.Series:
+def apply(df: pd.DataFrame, func: Callable, **kwargs) -> pd.Series:
     """
     Applies a vectorized version of a given function (func) to a dataframe (df)
     where the function inputs are described by a mapping of parameters to
